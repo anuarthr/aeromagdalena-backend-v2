@@ -1,25 +1,6 @@
 version: "3.9"
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: aeromagdalena-app
-    ports:
-      - "8081:8081"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/aeromagdalena
-      SPRING_DATASOURCE_USERNAME: aeromagdalena
-      SPRING_DATASOURCE_PASSWORD: aeromagdalena123
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      APP_JWT_SECRET: mysecretJ7Q16xGQkmEbE3fv4ecEmDkT5k3TkZZFg6srLt2YmpkEtjPfS28F3u
-      APP_JWT_EXPIRATION_MS: 43200000
-    depends_on:
-      - db
-    networks:
-      - aeromagdalena_network
-
   db:
     image: postgres:16
     container_name: aeromagdalena-db
@@ -33,6 +14,11 @@ services:
       - aeromagdalena_db_data:/var/lib/postgresql/data
     networks:
       - aeromagdalena_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aeromagdalena"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   aeromagdalena_db_data:
