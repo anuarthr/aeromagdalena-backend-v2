@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +35,12 @@ public class ClienteServiceImpl implements ClienteService {
         Cliente cliente = clienteRepository.findById(id)
                 .orElseThrow(() -> new ClientNotFoundException("Cliente no encontrado con ID: " + id));
         return clienteMapper.clienteToClienteDto(cliente);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Cliente> obtenerClienteEntity(Long id) {
+        return clienteRepository.findById(id);
     }
 
     @Override
