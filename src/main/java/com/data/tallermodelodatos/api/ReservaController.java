@@ -1,5 +1,9 @@
 package com.data.tallermodelodatos.api;
 
+// TODO: Refactorizar ReservaController siguiendo patrón de Vuelo y Cliente
+// Este controller está temporalmente deshabilitado durante la migración de arquitectura
+
+/*
 import com.data.tallermodelodatos.dto.PasajeroDto;
 import com.data.tallermodelodatos.dto.ReservaDto;
 import com.data.tallermodelodatos.entities.Cliente;
@@ -89,3 +93,4 @@ public class ReservaController {
         return ResponseEntity.noContent().build();
     }
 }
+*/
