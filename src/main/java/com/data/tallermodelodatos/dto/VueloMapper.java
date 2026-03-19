@@ -11,14 +11,26 @@ import org.mapstruct.factory.Mappers;
 public interface VueloMapper {
     VueloMapper INSTANCE = Mappers.getMapper(VueloMapper.class);
 
+    // Vuelo -> VueloDto (salida)
     @Mapping(source = "aerolinea.idAerolinea", target = "aerolineaId")
     @Mapping(source = "aeropuerto.idAeropuerto", target = "aeropuertoId")
     VueloDto vueloToVueloDto(Vuelo vuelo);
 
-    @Mapping(source = "aerolineaId", target = "aerolinea.idAerolinea")
-    @Mapping(source = "aeropuertoId", target = "aeropuerto.idAeropuerto")
-    Vuelo vueloDtoToVuelo(VueloDto vueloDto);
+    // VueloCreateRequest -> Vuelo (entrada para crear)
+    @Mapping(target = "idVuelo", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "aerolinea", ignore = true)
+    @Mapping(target = "aeropuerto", ignore = true)
+    @Mapping(target = "reservas", ignore = true)
+    Vuelo vueloCreateRequestToVuelo(VueloCreateRequest request);
 
-    Aerolinea aerolineaDtoToAerolinea(Long aerolineaId);
-    Aeropuerto aeropuertoDtoToAeropuerto(Long aeropuertoId);
+    // VueloUpdateRequest -> Vuelo (entrada para actualizar)
+    @Mapping(target = "idVuelo", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "aerolinea", ignore = true)
+    @Mapping(target = "aeropuerto", ignore = true)
+    @Mapping(target = "reservas", ignore = true)
+    Vuelo vueloUpdateRequestToVuelo(VueloUpdateRequest request);
 }
