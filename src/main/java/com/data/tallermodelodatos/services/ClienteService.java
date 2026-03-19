@@ -1,17 +1,40 @@
 package com.data.tallermodelodatos.services;
 
 import com.data.tallermodelodatos.dto.ClienteDto;
-import com.data.tallermodelodatos.entities.Cliente;
+import com.data.tallermodelodatos.dto.ClienteCreateRequest;
+import com.data.tallermodelodatos.dto.ClienteUpdateRequest;
+import org.springframework.stereotype.Service;
 import java.util.List;
-import java.util.Optional;
 
+@Service
 public interface ClienteService {
-     ClienteDto guardarCliente(ClienteDto clienteDto);
-     Optional<ClienteDto> buscarClientePorId(Long id);
-     Optional<Cliente> buscarClienteEntityPorId(Long id);
-     List<ClienteDto> buscarClientes();
-     List<ClienteDto> buscarClientesbyIds(List<Long> ids);
-     List<ClienteDto> buscarClientePorNombre(String nombre);
-     Optional<ClienteDto> actualizarCliente(Long id, ClienteDto clienteDto);
-     void deleteCliente(Long id);
+    /**
+     * Crear un nuevo cliente
+     */
+    ClienteDto crearCliente(ClienteCreateRequest request);
+
+    /**
+     * Obtener cliente por ID
+     */
+    ClienteDto obtenerClientePorId(Long id);
+
+    /**
+     * Listar todos los clientes
+     */
+    List<ClienteDto> listarClientes();
+
+    /**
+     * Buscar clientes por nombre
+     */
+    List<ClienteDto> buscarClientesPorNombre(String nombre);
+
+    /**
+     * Actualizar cliente existente
+     */
+    ClienteDto actualizarCliente(Long id, ClienteUpdateRequest request);
+
+    /**
+     * Eliminar cliente
+     */
+    void eliminarCliente(Long id);
 }
