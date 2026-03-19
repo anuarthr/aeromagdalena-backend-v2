@@ -1,6 +1,7 @@
 package com.data.tallermodelodatos.api;
 
 import com.data.tallermodelodatos.dto.ClienteDto;
+import com.data.tallermodelodatos.dto.ClienteCreateRequest;
 import com.data.tallermodelodatos.dto.LoginRequest;
 import com.data.tallermodelodatos.dto.LoginResponse;
 import com.data.tallermodelodatos.dto.UserDto;
@@ -52,23 +53,22 @@ public class AuthenticationController {
             return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
-        ClienteDto clienteDto = new ClienteDto(
-                null,
+        ClienteCreateRequest clienteRequest = new ClienteCreateRequest(
                 userDto.nombre(),
                 userDto.apellido(),
-                userDto.direccion(),
-                userDto.telefono(),
                 userDto.email(),
-                passwordEncoder.encode(userDto.password()),
-                userDto.username()
+                userDto.username(),
+                userDto.password(),
+                userDto.direccion(),
+                userDto.telefono()
         );
-        ClienteDto newCliente = clienteService.guardarCliente(clienteDto);
+        ClienteDto newCliente = clienteService.crearCliente(clienteRequest);
 
         User user = new User();
         user.setId(newCliente.idCliente());
         user.setUsername(newCliente.username());
         user.setEmail(newCliente.email());
-        user.setPassword(newCliente.password());
+        user.setPassword(passwordEncoder.encode(userDto.password()));
         user.setNombre(newCliente.nombre());
         user.setApellido(newCliente.apellido());
         user.setDireccion(newCliente.direccion());
@@ -110,3 +110,4 @@ public class AuthenticationController {
         return ResponseEntity.ok(new LoginResponse(jwt, userDto));
     }
 }
+
