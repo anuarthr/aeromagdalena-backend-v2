@@ -7,11 +7,17 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import java.time.LocalDateTime;
 
-@ControllerAdvice //para las excepciones que se tengan creadas las captura y las maneja
+@ControllerAdvice
 public class GlobalException {
-    @ExceptionHandler(value = ResourceNotFoundException.class) //manejador del evento de la excepcion resourcenotfound
+    @ExceptionHandler(value = ResourceNotFoundException.class)
     public ResponseEntity<ErrorMessage> resourceNotFound(ResourceNotFoundException ex, WebRequest request) {
-        ErrorMessage errorMessage = new ErrorMessage(HttpStatus.NOT_FOUND.value(), ex.getMessage(), LocalDateTime.now());
+        ErrorMessage errorMessage = ErrorMessage.builder()
+                .timestamp(LocalDateTime.now())
+                .status(HttpStatus.NOT_FOUND.value())
+                .error("Recurso no encontrado")
+                .message(ex.getMessage())
+                .path(request.getDescription(false).replace("uri=", ""))
+                .build();
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorMessage);
     }
 }

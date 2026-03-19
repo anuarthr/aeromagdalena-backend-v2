@@ -1,99 +1,87 @@
 package com.data.tallermodelodatos.services;
 
 import com.data.tallermodelodatos.dto.ClienteDto;
+import com.data.tallermodelodatos.dto.ClienteCreateRequest;
+import com.data.tallermodelodatos.dto.ClienteUpdateRequest;
+import com.data.tallermodelodatos.dto.ClienteMapper;
 import com.data.tallermodelodatos.entities.Cliente;
+import com.data.tallermodelodatos.exception.ClientNotFoundException;
 import com.data.tallermodelodatos.repositories.ClienteRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class ClienteServiceImpl implements ClienteService {
-
-    @Autowired
-    private ClienteRepository clienteRepository;
+    private final ClienteRepository clienteRepository;
+    private final ClienteMapper clienteMapper;
 
     @Override
-    public List<ClienteDto> buscarClientes() {
-        return clienteRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    public ClienteDto crearCliente(ClienteCreateRequest request) {
+        Cliente cliente = clienteMapper.clienteCreateRequestToCliente(request);
+        Cliente clienteGuardado = clienteRepository.save(cliente);
+        return clienteMapper.clienteToClienteDto(clienteGuardado);
     }
 
     @Override
-    public List<ClienteDto> buscarClientesbyIds(List<Long> ids) {
-        return List.of();
+    @Transactional(readOnly = true)
+    public ClienteDto obtenerClientePorId(Long id) {
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new ClientNotFoundException("Cliente no encontrado con ID: " + id));
+        return clienteMapper.clienteToClienteDto(cliente);
     }
 
     @Override
-    public List<ClienteDto> buscarClientePorNombre(String nombre) {
-        return List.of();
-    }
-
-    @Override
-    public Optional<ClienteDto> buscarClientePorId(Long id) {
-        return clienteRepository.findById(id)
-                .map(this::convertToDto);
-    }
-
-    @Override
-    public Optional<Cliente> buscarClienteEntityPorId(Long id) {
+    @Transactional(readOnly = true)
+    public Optional<Cliente> obtenerClienteEntity(Long id) {
         return clienteRepository.findById(id);
     }
 
     @Override
-    public ClienteDto guardarCliente(ClienteDto clienteDto) {
-        Cliente cliente = convertToEntity(clienteDto);
-        Cliente savedCliente = clienteRepository.save(cliente);
-        return convertToDto(savedCliente);
+    @Transactional(readOnly = true)
+    public List<ClienteDto> listarClientes() {
+        return clienteRepository.findAll()
+                .stream()
+                .map(clienteMapper::clienteToClienteDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Optional<ClienteDto> actualizarCliente(Long id, ClienteDto clienteDto) {
-        return clienteRepository.findById(id)
-                .map(existingCliente -> {
-                    existingCliente.setNombre(clienteDto.nombre());
-                    existingCliente.setApellido(clienteDto.apellido());
-                    existingCliente.setDireccion(clienteDto.direccion());
-                    existingCliente.setTelefono(clienteDto.telefono());
-                    existingCliente.setEmail(clienteDto.email());
-                    existingCliente.setPassword(clienteDto.password());
-                    existingCliente.setUsername(clienteDto.username());
-                    Cliente updatedCliente = clienteRepository.save(existingCliente);
-                    return convertToDto(updatedCliente);
-                });
+    @Transactional(readOnly = true)
+    public List<ClienteDto> buscarClientesPorNombre(String nombre) {
+        return clienteRepository.findAll()
+                .stream()
+                .filter(c -> c.getNombre().toLowerCase().contains(nombre.toLowerCase()))
+                .map(clienteMapper::clienteToClienteDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public void deleteCliente(Long id) {
-        clienteRepository.deleteById(id);
+    public ClienteDto actualizarCliente(Long id, ClienteUpdateRequest request) {
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new ClientNotFoundException("Cliente no encontrado con ID: " + id));
+
+        cliente.setNombre(request.nombre());
+        cliente.setApellido(request.apellido());
+        cliente.setEmail(request.email());
+        cliente.setUsername(request.username());
+        cliente.setDireccion(request.direccion());
+        cliente.setTelefono(request.telefono());
+
+        Cliente clienteActualizado = clienteRepository.save(cliente);
+        return clienteMapper.clienteToClienteDto(clienteActualizado);
     }
 
-    private ClienteDto convertToDto(Cliente cliente) {
-        return new ClienteDto(
-                cliente.getIdCliente(),
-                cliente.getNombre(),
-                cliente.getApellido(),
-                cliente.getDireccion(),
-                cliente.getTelefono(),
-                cliente.getEmail(),
-                cliente.getPassword(),
-                cliente.getUsername()
-        );
-    }
-
-    private Cliente convertToEntity(ClienteDto clienteDto) {
-        Cliente cliente = new Cliente();
-        cliente.setIdCliente(clienteDto.idCliente());
-        cliente.setNombre(clienteDto.nombre());
-        cliente.setApellido(clienteDto.apellido());
-        cliente.setDireccion(clienteDto.direccion());
-        cliente.setTelefono(clienteDto.telefono());
-        cliente.setEmail(clienteDto.email());
-        cliente.setPassword(clienteDto.password());
-        cliente.setUsername(clienteDto.username());
-        return cliente;
+    @Override
+    public void eliminarCliente(Long id) {
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new ClientNotFoundException("Cliente no encontrado con ID: " + id));
+        clienteRepository.delete(cliente);
     }
 }

@@ -2,106 +2,113 @@ package com.data.tallermodelodatos.services;
 
 import com.data.tallermodelodatos.dto.VueloMapper;
 import com.data.tallermodelodatos.dto.VueloDto;
+import com.data.tallermodelodatos.dto.VueloCreateRequest;
+import com.data.tallermodelodatos.dto.VueloUpdateRequest;
 import com.data.tallermodelodatos.entities.Aerolinea;
 import com.data.tallermodelodatos.entities.Aeropuerto;
 import com.data.tallermodelodatos.entities.Vuelo;
 import com.data.tallermodelodatos.exception.AerolineaNotFoundException;
 import com.data.tallermodelodatos.exception.AeropuertoNotFoundException;
+import com.data.tallermodelodatos.exception.VueloNotFoundException;
 import com.data.tallermodelodatos.repositories.AerolineaRepository;
 import com.data.tallermodelodatos.repositories.AeropuertoRepository;
 import com.data.tallermodelodatos.repositories.VueloRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
+@Transactional
 public class VueloServiceImpl implements VueloService {
-    @Autowired
-    private VueloRepository vueloRepository;
-    @Autowired
-    private AerolineaRepository aerolineaRepository;
-    @Autowired
-    private AeropuertoRepository aeropuertoRepository;
+    private final VueloRepository vueloRepository;
     private final VueloMapper vueloMapper;
-
-    public VueloServiceImpl(VueloRepository vueloRepository, VueloMapper vueloMapper, AerolineaRepository aerolineaRepository, AeropuertoRepository aeropuertoRepository) {
-        this.vueloRepository = vueloRepository;
-        this.vueloMapper = vueloMapper;
-        this.aerolineaRepository = aerolineaRepository;
-        this.aeropuertoRepository = aeropuertoRepository;
-    }
+    private final AerolineaRepository aerolineaRepository;
+    private final AeropuertoRepository aeropuertoRepository;
 
     @Override
-    public VueloDto guardarVuelo(VueloDto vueloDto) {
-        Vuelo vuelo = vueloMapper.vueloDtoToVuelo(vueloDto);
-        Aerolinea aerolinea = aerolineaRepository.findById(vueloDto.aerolineaId()).orElseThrow(AerolineaNotFoundException::new);
-        Aeropuerto aeropuerto = aeropuertoRepository.findById(vueloDto.aeropuertoId()).orElseThrow(AeropuertoNotFoundException::new);
+    public VueloDto crearVuelo(VueloCreateRequest request) {
+        // Validar que aerolínea y aeropuerto existan
+        Aerolinea aerolinea = aerolineaRepository.findById(request.aerolineaId())
+                .orElseThrow(() -> new AerolineaNotFoundException("Aerolínea no encontrada con ID: " + request.aerolineaId()));
+        Aeropuerto aeropuerto = aeropuertoRepository.findById(request.aeropuertoId())
+                .orElseThrow(() -> new AeropuertoNotFoundException("Aeropuerto no encontrado con ID: " + request.aeropuertoId()));
+
+        // Mapear y crear vuelo
+        Vuelo vuelo = vueloMapper.vueloCreateRequestToVuelo(request);
         vuelo.setAerolinea(aerolinea);
         vuelo.setAeropuerto(aeropuerto);
-        Vuelo savedVuelo = vueloRepository.save(vuelo);
-        return vueloMapper.vueloToVueloDto(savedVuelo);
+
+        Vuelo vueloGuardado = vueloRepository.save(vuelo);
+        return vueloMapper.vueloToVueloDto(vueloGuardado);
     }
 
     @Override
-    public Optional<VueloDto> buscarVueloPorId(Long id) {
-        return vueloRepository.findById(id).map(
-                vuelo -> vueloMapper.vueloToVueloDto(vuelo));
+    @Transactional(readOnly = true)
+    public VueloDto obtenerVueloPorId(Long id) {
+        Vuelo vuelo = vueloRepository.findById(id)
+                .orElseThrow(() -> new VueloNotFoundException("Vuelo no encontrado con ID: " + id));
+        return vueloMapper.vueloToVueloDto(vuelo);
     }
 
     @Override
-    public List<VueloDto> buscarVuelos() {
-        List<VueloDto> vuelos = new ArrayList<>();
-        vueloRepository.findAll().forEach(
-                vuelo -> vuelos.add(vueloMapper.vueloToVueloDto(vuelo)));
-        return vuelos;
+    @Transactional(readOnly = true)
+    public List<VueloDto> listarVuelos() {
+        return vueloRepository.findAll()
+                .stream()
+                .map(vueloMapper::vueloToVueloDto)
+                .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<VueloDto> buscarVuelosPorOrigen(String origen) {
-        List<VueloDto> vuelos = new ArrayList<>();
-        vueloRepository.findByOrigen(origen).forEach(
-                vuelo -> vuelos.add(vueloMapper.vueloToVueloDto(vuelo)));
-        return vuelos;
+        return vueloRepository.findByOrigen(origen)
+                .stream()
+                .map(vueloMapper::vueloToVueloDto)
+                .collect(Collectors.toList());
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<VueloDto> buscarVuelosPorDestino(String destino) {
-        List<VueloDto> vuelos = new ArrayList<>();
-        vueloRepository.findByDestino(destino).forEach(
-                vuelo -> vuelos.add(vueloMapper.vueloToVueloDto(vuelo)));
-        return vuelos;
+        return vueloRepository.findByDestino(destino)
+                .stream()
+                .map(vueloMapper::vueloToVueloDto)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<VueloDto> buscarVuelosPorIds(List<Long> ids) {
-        List<VueloDto> vuelos = new ArrayList<>();
-        vueloRepository.findByIdVueloIn(ids).forEach(
-                vuelo -> vuelos.add(vueloMapper.vueloToVueloDto(vuelo)));
-        return vuelos;
-    }
+    public VueloDto actualizarVuelo(Long id, VueloUpdateRequest request) {
+        Vuelo vuelo = vueloRepository.findById(id)
+                .orElseThrow(() -> new VueloNotFoundException("Vuelo no encontrado con ID: " + id));
 
-    @Override
-    public Optional<VueloDto> actualizarVuelo(Long id, VueloDto vueloDto) {
-        return vueloRepository.findById(id).map(oldVuelo -> {
-            oldVuelo.setOrigen(vueloDto.origen());
-            oldVuelo.setDestino(vueloDto.destino());
-            oldVuelo.setFechaDeSalida(vueloDto.fechaDeSalida());
-            oldVuelo.setHoraDeSalida(vueloDto.horaDeSalida());
-            oldVuelo.setDuracion(vueloDto.duracion());
-            oldVuelo.setCapacidad(vueloDto.capacidad());
-            Aerolinea aerolinea = aerolineaRepository.findById(vueloDto.aerolineaId()).orElseThrow(AerolineaNotFoundException::new);
-            Aeropuerto aeropuerto = aeropuertoRepository.findById(vueloDto.aeropuertoId()).orElseThrow(AeropuertoNotFoundException::new);
-            oldVuelo.setAerolinea(aerolinea);
-            oldVuelo.setAeropuerto(aeropuerto);
-            return vueloMapper.vueloToVueloDto(vueloRepository.save(oldVuelo));
-        });
+        // Validar que aerolínea y aeropuerto existan
+        Aerolinea aerolinea = aerolineaRepository.findById(request.aerolineaId())
+                .orElseThrow(() -> new AerolineaNotFoundException("Aerolínea no encontrada con ID: " + request.aerolineaId()));
+        Aeropuerto aeropuerto = aeropuertoRepository.findById(request.aeropuertoId())
+                .orElseThrow(() -> new AeropuertoNotFoundException("Aeropuerto no encontrado con ID: " + request.aeropuertoId()));
+
+        // Actualizar campos
+        vuelo.setOrigen(request.origen());
+        vuelo.setDestino(request.destino());
+        vuelo.setFechaDeSalida(request.fechaDeSalida());
+        vuelo.setDuracion(request.duracion());
+        vuelo.setCapacidad(request.capacidad());
+        vuelo.setAerolinea(aerolinea);
+        vuelo.setAeropuerto(aeropuerto);
+
+        Vuelo vueloActualizado = vueloRepository.save(vuelo);
+        return vueloMapper.vueloToVueloDto(vueloActualizado);
     }
 
     @Override
     public void eliminarVuelo(Long id) {
-        vueloRepository.deleteById(id);
+        Vuelo vuelo = vueloRepository.findById(id)
+                .orElseThrow(() -> new VueloNotFoundException("Vuelo no encontrado con ID: " + id));
+        vueloRepository.delete(vuelo);
     }
 }

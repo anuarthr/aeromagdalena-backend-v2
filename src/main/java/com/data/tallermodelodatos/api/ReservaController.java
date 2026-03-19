@@ -1,12 +1,14 @@
 package com.data.tallermodelodatos.api;
-
 import com.data.tallermodelodatos.dto.PasajeroDto;
+import com.data.tallermodelodatos.dto.ReservaCreateRequest;
 import com.data.tallermodelodatos.dto.ReservaDto;
+import com.data.tallermodelodatos.dto.ReservaUpdateRequest;
 import com.data.tallermodelodatos.entities.Cliente;
 import com.data.tallermodelodatos.exception.ReservaNotFoundException;
 import com.data.tallermodelodatos.services.ClienteService;
 import com.data.tallermodelodatos.services.PasajeroService;
 import com.data.tallermodelodatos.services.ReservaService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -44,22 +46,17 @@ public class ReservaController {
 
     @GetMapping("/cliente/{idCliente}")
     public ResponseEntity<List<ReservaDto>> getReservasByClienteId(@PathVariable Long idCliente) {
-        Cliente cliente = clienteService.buscarClienteEntityPorId(idCliente)
+        Cliente cliente = clienteService.obtenerClienteEntity(idCliente)
                 .orElseThrow(() -> new RuntimeException("Cliente not found"));
         return ResponseEntity.ok(reservaService.buscarReservasPorCliente(cliente));
     }
 
     @PostMapping()
-    public ResponseEntity<ReservaDto> createReserva(@RequestBody ReservaDto reservaDto) throws URISyntaxException {
-        Cliente cliente = clienteService.buscarClienteEntityPorId(reservaDto.idCliente())
+    public ResponseEntity<ReservaDto> createReserva(@Valid @RequestBody ReservaCreateRequest reservaRequest) throws URISyntaxException {
+        Cliente cliente = clienteService.obtenerClienteEntity(reservaRequest.idCliente())
                 .orElseThrow(() -> new RuntimeException("Cliente not found"));
+        ReservaDto reservaDto = new ReservaDto(null, reservaRequest.fechaDeReserva(), reservaRequest.numeroDePasajeros(), reservaRequest.idCliente(), null);
         ReservaDto newReserva = reservaService.guardarReserva(reservaDto, cliente);
-        if (reservaDto.pasajeros() != null) {
-            for (PasajeroDto pasajeroDto : reservaDto.pasajeros()) {
-                pasajeroDto = new PasajeroDto(null, pasajeroDto.nombre(), pasajeroDto.apellido(), pasajeroDto.pasaporte(), pasajeroDto.nacionalidad());
-                pasajeroService.guardarPasajero(pasajeroDto);
-            }
-        }
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(newReserva.idReserva())
@@ -68,13 +65,14 @@ public class ReservaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ReservaDto> updateReserva(@PathVariable Long id, @RequestBody ReservaDto newReservaDto) {
-        Optional<ReservaDto> reservaUpdated = reservaService.actualizarReserva(id, newReservaDto);
+    public ResponseEntity<ReservaDto> updateReserva(@PathVariable Long id, @Valid @RequestBody ReservaUpdateRequest reservaRequest) {
+        Cliente cliente = clienteService.obtenerClienteEntity(reservaRequest.idCliente())
+                .orElseThrow(() -> new RuntimeException("Cliente not found"));
+        ReservaDto reservaDto = new ReservaDto(null, reservaRequest.fechaDeReserva(), reservaRequest.numeroDePasajeros(), reservaRequest.idCliente(), null);
+        Optional<ReservaDto> reservaUpdated = reservaService.actualizarReserva(id, reservaDto);
         return reservaUpdated.map(reserva -> ResponseEntity.ok(reserva))
                 .orElseGet(() -> {
-                    Cliente cliente = clienteService.buscarClienteEntityPorId(newReservaDto.idCliente())
-                            .orElseThrow(() -> new RuntimeException("Cliente not found"));
-                    ReservaDto createdReserva = reservaService.guardarReserva(newReservaDto, cliente);
+                    ReservaDto createdReserva = reservaService.guardarReserva(reservaDto, cliente);
                     URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                             .path("/{id}")
                             .buildAndExpand(createdReserva.idReserva())

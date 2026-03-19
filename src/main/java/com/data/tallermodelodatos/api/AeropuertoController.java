@@ -1,7 +1,10 @@
 package com.data.tallermodelodatos.api;
 
+import com.data.tallermodelodatos.dto.AeropuertoCreateRequest;
 import com.data.tallermodelodatos.dto.AeropuertoDto;
+import com.data.tallermodelodatos.dto.AeropuertoUpdateRequest;
 import com.data.tallermodelodatos.services.AeropuertoService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -35,8 +38,9 @@ public class AeropuertoController {
     }
 
     @PostMapping()
-    public ResponseEntity<AeropuertoDto> createAeropuerto(@RequestBody AeropuertoDto aeropuerto) throws URISyntaxException {
-        AeropuertoDto newAeropuerto = aeropuertoService.guardarAeropuerto(aeropuerto);
+    public ResponseEntity<AeropuertoDto> createAeropuerto(@Valid @RequestBody AeropuertoCreateRequest aeropuertoRequest) throws URISyntaxException {
+        AeropuertoDto aeropuertoDto = new AeropuertoDto(null, aeropuertoRequest.nombre(), aeropuertoRequest.ciudad(), aeropuertoRequest.pais());
+        AeropuertoDto newAeropuerto = aeropuertoService.guardarAeropuerto(aeropuertoDto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(newAeropuerto.idAeropuerto())
@@ -45,11 +49,12 @@ public class AeropuertoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<AeropuertoDto> updateAeropuerto(@PathVariable Long id, @RequestBody AeropuertoDto newAeropuerto) {
-        Optional<AeropuertoDto> aeropuertoUpdated = aeropuertoService.actualizarAeropuerto(id, newAeropuerto);
+    public ResponseEntity<AeropuertoDto> updateAeropuerto(@PathVariable Long id, @Valid @RequestBody AeropuertoUpdateRequest aeropuertoRequest) {
+        AeropuertoDto aeropuertoDto = new AeropuertoDto(null, aeropuertoRequest.nombre(), aeropuertoRequest.ciudad(), aeropuertoRequest.pais());
+        Optional<AeropuertoDto> aeropuertoUpdated = aeropuertoService.actualizarAeropuerto(id, aeropuertoDto);
         return aeropuertoUpdated.map(ResponseEntity::ok)
                 .orElseGet(() -> {
-                    AeropuertoDto createdAeropuerto = aeropuertoService.guardarAeropuerto(newAeropuerto);
+                    AeropuertoDto createdAeropuerto = aeropuertoService.guardarAeropuerto(aeropuertoDto);
                     URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                             .path("/{id}")
                             .buildAndExpand(createdAeropuerto.idAeropuerto())

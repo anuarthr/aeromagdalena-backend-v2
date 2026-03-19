@@ -1,87 +1,83 @@
 package com.data.tallermodelodatos.api;
 
 import com.data.tallermodelodatos.dto.ClienteDto;
-import com.data.tallermodelodatos.dto.UserDto;
+import com.data.tallermodelodatos.dto.ClienteCreateRequest;
+import com.data.tallermodelodatos.dto.ClienteUpdateRequest;
 import com.data.tallermodelodatos.services.ClienteService;
-import com.data.tallermodelodatos.services.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/v1/clientes")
 @CrossOrigin(origins = "http://localhost:5173")
+@RequiredArgsConstructor
 public class ClienteController {
 
     private final ClienteService clienteService;
-    private final UserService userService;
-    private static final Logger logger = LoggerFactory.getLogger(ClienteController.class);
 
-    public ClienteController(ClienteService clienteService, UserService userService) {
-        this.clienteService = clienteService;
-        this.userService = userService;
-    }
-
-    @GetMapping()
-    public ResponseEntity<List<ClienteDto>> getAllClientes() {
-        logger.info("Fetching all clients");
-        List<ClienteDto> clientes = clienteService.buscarClientes();
+    /**
+     * GET /api/v1/clientes - Listar todos los clientes
+     */
+    @GetMapping
+    public ResponseEntity<List<ClienteDto>> listarClientes() {
+        List<ClienteDto> clientes = clienteService.listarClientes();
         return ResponseEntity.ok(clientes);
     }
 
+    /**
+     * GET /api/v1/clientes/{id} - Obtener cliente por ID
+     */
     @GetMapping("/{id}")
-    public ResponseEntity<ClienteDto> getClienteById(@PathVariable Long id) {
-        logger.info("Fetching cliente con id: {}", id);
-        return clienteService.buscarClientePorId(id)
-                .map(clienteDto -> ResponseEntity.ok().body(clienteDto))
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+    public ResponseEntity<ClienteDto> obtenerClientePorId(@PathVariable Long id) {
+        ClienteDto cliente = clienteService.obtenerClientePorId(id);
+        return ResponseEntity.ok(cliente);
     }
 
-    @PostMapping()
-    public ResponseEntity<ClienteDto> createCliente(@RequestBody ClienteDto clienteDto) throws URISyntaxException {
-        logger.info("Creando nuevo cliente {}", clienteDto);
-        ClienteDto newCliente = clienteService.guardarCliente(clienteDto);
+    /**
+     * POST /api/v1/clientes - Crear nuevo cliente
+     */
+    @PostMapping
+    public ResponseEntity<ClienteDto> crearCliente(@Valid @RequestBody ClienteCreateRequest request) {
+        ClienteDto clienteCreado = clienteService.crearCliente(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
-                .buildAndExpand(newCliente.idCliente())
+                .buildAndExpand(clienteCreado.idCliente())
                 .toUri();
-        return ResponseEntity.created(location).body(newCliente);
+        return ResponseEntity.created(location).body(clienteCreado);
     }
 
+    /**
+     * PUT /api/v1/clientes/{id} - Actualizar cliente existente
+     */
     @PutMapping("/{id}")
-    public ResponseEntity<ClienteDto> updateCliente(@PathVariable Long id, @RequestBody ClienteDto newClienteDto) {
-        logger.info("Updating cliente con id: {}", id);
-        Optional<ClienteDto> clienteUpdated = clienteService.actualizarCliente(id, newClienteDto);
-        clienteUpdated.ifPresent(cliente -> {
-            UserDto userDto = new UserDto(
-                    cliente.idCliente(),
-                    cliente.username(),
-                    cliente.email(),
-                    cliente.password(),
-                    Set.of("ROLE_USER"),
-                    cliente.nombre(),
-                    cliente.apellido(),
-                    cliente.direccion(),
-                    cliente.telefono()
-            );
-            userService.updateUser(id, userDto);
-        });
-        return clienteUpdated.map(cliente -> ResponseEntity.ok(cliente))
-                .orElseThrow(() -> new RuntimeException("Client not found"));
+    public ResponseEntity<ClienteDto> actualizarCliente(
+            @PathVariable Long id,
+            @Valid @RequestBody ClienteUpdateRequest request) {
+        ClienteDto clienteActualizado = clienteService.actualizarCliente(id, request);
+        return ResponseEntity.ok(clienteActualizado);
     }
 
+    /**
+     * DELETE /api/v1/clientes/{id} - Eliminar cliente
+     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteCliente(@PathVariable Long id) {
-        logger.info("Deleting cliente con id: {}", id);
-        clienteService.deleteCliente(id);
-        userService.deleteUser(id);
+    public ResponseEntity<Void> eliminarCliente(@PathVariable Long id) {
+        clienteService.eliminarCliente(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * GET /api/v1/clientes/buscar/nombre - Buscar clientes por nombre
+     */
+    @GetMapping("/buscar/nombre")
+    public ResponseEntity<List<ClienteDto>> buscarPorNombre(@RequestParam String nombre) {
+        List<ClienteDto> clientes = clienteService.buscarClientesPorNombre(nombre);
+        return ResponseEntity.ok(clientes);
     }
 }

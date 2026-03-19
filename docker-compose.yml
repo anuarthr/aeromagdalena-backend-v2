@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:16
+    container_name: aeromagdalena-db
+    environment:
+      POSTGRES_DB: aeromagdalena
+      POSTGRES_USER: aeromagdalena
+      POSTGRES_PASSWORD: aeromagdalena123
+    ports:
+      - "5432:5432"
+    volumes:
+      - aeromagdalena_db_data:/var/lib/postgresql/data
+    networks:
+      - aeromagdalena_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U aeromagdalena"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  aeromagdalena_db_data:
+
+networks:
+  aeromagdalena_network:
+    driver: bridge

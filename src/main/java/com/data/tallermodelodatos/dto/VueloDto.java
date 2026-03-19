@@ -1,6 +1,20 @@
 package com.data.tallermodelodatos.dto;
 
-public record VueloDto(Long idVuelo, String origen, String destino, String fechaDeSalida,
-                       String horaDeSalida, Integer duracion, Integer capacidad,
-                       Long aerolineaId, Long aeropuertoId) {
+import java.time.LocalDateTime;
+
+/**
+ * DTO de salida para Vuelo (lectura)
+ */
+public record VueloDto(
+        Long idVuelo,
+        String origen,
+        String destino,
+        LocalDateTime fechaDeSalida,
+        Integer duracion,
+        Integer capacidad,
+        Long aerolineaId,
+        Long aeropuertoId,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
+) {
 }
