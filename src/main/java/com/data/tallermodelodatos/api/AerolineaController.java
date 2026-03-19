@@ -1,7 +1,10 @@
 package com.data.tallermodelodatos.api;
 
+import com.data.tallermodelodatos.dto.AerolineaCreateRequest;
 import com.data.tallermodelodatos.dto.AerolineaDto;
+import com.data.tallermodelodatos.dto.AerolineaUpdateRequest;
 import com.data.tallermodelodatos.services.AerolineaService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -35,8 +38,9 @@ public class AerolineaController {
     }
 
     @PostMapping()
-    public ResponseEntity<AerolineaDto> createAerolinea(@RequestBody AerolineaDto aerolinea) throws URISyntaxException {
-        AerolineaDto newAerolinea = aerolineaService.guardarAerolinea(aerolinea);
+    public ResponseEntity<AerolineaDto> createAerolinea(@Valid @RequestBody AerolineaCreateRequest aerolineaRequest) throws URISyntaxException {
+        AerolineaDto aerolineaDto = new AerolineaDto(null, aerolineaRequest.nombre(), aerolineaRequest.codigoAerolinea(), aerolineaRequest.paisDeOrigen());
+        AerolineaDto newAerolinea = aerolineaService.guardarAerolinea(aerolineaDto);
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(newAerolinea.idAerolinea())
@@ -45,11 +49,12 @@ public class AerolineaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<AerolineaDto> updateAerolinea(@PathVariable Long id, @RequestBody AerolineaDto newAerolinea) {
-        Optional<AerolineaDto> aerolineaUpdated = aerolineaService.actualizarAerolinea(id, newAerolinea);
+    public ResponseEntity<AerolineaDto> updateAerolinea(@PathVariable Long id, @Valid @RequestBody AerolineaUpdateRequest aerolineaRequest) {
+        AerolineaDto aerolineaDto = new AerolineaDto(null, aerolineaRequest.nombre(), aerolineaRequest.codigoAerolinea(), aerolineaRequest.paisDeOrigen());
+        Optional<AerolineaDto> aerolineaUpdated = aerolineaService.actualizarAerolinea(id, aerolineaDto);
         return aerolineaUpdated.map(ResponseEntity::ok)
                 .orElseGet(() -> {
-                    AerolineaDto createdAerolinea = aerolineaService.guardarAerolinea(newAerolinea);
+                    AerolineaDto createdAerolinea = aerolineaService.guardarAerolinea(aerolineaDto);
                     URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                             .path("/{id}")
                             .buildAndExpand(createdAerolinea.idAerolinea())

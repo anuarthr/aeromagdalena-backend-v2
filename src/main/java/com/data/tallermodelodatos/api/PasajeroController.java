@@ -1,8 +1,11 @@
 package com.data.tallermodelodatos.api;
 
+import com.data.tallermodelodatos.dto.PasajeroCreateRequest;
 import com.data.tallermodelodatos.dto.PasajeroDto;
+import com.data.tallermodelodatos.dto.PasajeroUpdateRequest;
 import com.data.tallermodelodatos.exception.PasajeroNotFoundException;
 import com.data.tallermodelodatos.services.PasajeroService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -37,16 +40,18 @@ public class PasajeroController {
     }
 
     @PostMapping
-    public ResponseEntity<PasajeroDto> createPasajero(@RequestBody PasajeroDto pasajero) throws URISyntaxException {
-        return crearNuevoPasajero(pasajero);
+    public ResponseEntity<PasajeroDto> createPasajero(@Valid @RequestBody PasajeroCreateRequest pasajeroRequest) throws URISyntaxException {
+        PasajeroDto pasajeroDto = new PasajeroDto(null, pasajeroRequest.nombre(), pasajeroRequest.apellido(), pasajeroRequest.pasaporte(), pasajeroRequest.nacionalidad());
+        return crearNuevoPasajero(pasajeroDto);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<PasajeroDto> actualizarPasajero(@PathVariable Long id, @RequestBody PasajeroDto nuevoPasajero) {
-        Optional<PasajeroDto> pasajeroUpdate = pasajeroService.actualizarPasajero(id, nuevoPasajero);
+    public ResponseEntity<PasajeroDto> actualizarPasajero(@PathVariable Long id, @Valid @RequestBody PasajeroUpdateRequest pasajeroRequest) {
+        PasajeroDto pasajeroDto = new PasajeroDto(null, pasajeroRequest.nombre(), pasajeroRequest.apellido(), pasajeroRequest.pasaporte(), pasajeroRequest.nacionalidad());
+        Optional<PasajeroDto> pasajeroUpdate = pasajeroService.actualizarPasajero(id, pasajeroDto);
         return pasajeroUpdate.map(pasajero -> ResponseEntity.ok(pasajero))
                 .orElseGet(() -> {
-                    return crearNuevoPasajero(nuevoPasajero);
+                    return crearNuevoPasajero(pasajeroDto);
                 });
     }
 
